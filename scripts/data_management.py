@@ -19,7 +19,6 @@ CONFIG = read_config()
 DATA_DIR = Path(__file__).parent.parent / CONFIG["PATHS"]["data_dir"]
 
 
-# -------------------------------------------------------------------------
 def _primary_file(base: str) -> Path:
     """clients_real.pkl / clients_synth.pkl в зависимости от текущего режима."""
     suffix = "real" if app_state.mode is app_state.DataMode.REAL else "synth"
