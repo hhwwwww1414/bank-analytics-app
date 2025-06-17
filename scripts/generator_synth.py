@@ -3,7 +3,8 @@ generator_synth.py – создаёт clients_synth.pkl / accounts_synth.pkl
 по заданным параметрам.
 """
 from __future__ import annotations
-import numpy as np, pandas as pd
+import numpy as np
+import pandas as pd
 from pathlib import Path
 from dataclasses import dataclass
 from library.common_funcs import save_df

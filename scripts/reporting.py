@@ -7,7 +7,6 @@
 
 import pandas as pd
 import matplotlib.pyplot as plt
-from pathlib import Path
 
 
 # 1. Текстовый простой отчет (проекция)

@@ -7,8 +7,6 @@ from __future__ import annotations
 
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
-import numpy as np
-import pandas as pd
 
 from scripts.data_management import load_clients
 from scripts.reporting import report_hist

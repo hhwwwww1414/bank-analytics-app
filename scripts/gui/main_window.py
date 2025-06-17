@@ -8,7 +8,7 @@ main_window.py
 from __future__ import annotations
 
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk
 import sys
 
 from scripts.gui.clients_window import open_clients_window

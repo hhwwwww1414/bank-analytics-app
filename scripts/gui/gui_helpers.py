@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import tkinter as tk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from pathlib import Path
 
 
 def show_matplotlib(fig, container: tk.Widget) -> FigureCanvasTkAgg:

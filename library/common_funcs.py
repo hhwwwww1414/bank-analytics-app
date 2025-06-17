@@ -7,7 +7,6 @@
 import pickle
 from pathlib import Path
 from configparser import ConfigParser
-from typing import Any
 
 
 def save_df(df, file_path: str | Path) -> None:

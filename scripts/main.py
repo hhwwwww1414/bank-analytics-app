@@ -17,7 +17,8 @@ def main() -> None:
         root.mainloop()
     except Exception as exc:
         # покажем ошибку в консоли и во всплывающем окне
-        import traceback, tkinter.messagebox as mb
+        import traceback
+        import tkinter.messagebox as mb
         traceback.print_exc()
         mb.showerror("Unhandled error", str(exc))
         root.destroy()
