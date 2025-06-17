@@ -1,6 +1,5 @@
 import pandas as pd
 import pytest
-from pathlib import Path
 
 import scripts.data_management as dm
 from library.common_funcs import save_df
