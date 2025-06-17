@@ -11,14 +11,40 @@ import matplotlib.pyplot as plt
 
 # 1. Текстовый простой отчет (проекция)
 def report_projection(df: pd.DataFrame, columns: list[str], n_rows: int | None = None) -> pd.DataFrame:
-    return df.loc[:n_rows, columns] if n_rows else df[columns]
+    """Проекция: возвращает указанные столбцы и, при n_rows>0, первые n_rows строк."""
+    if n_rows:
+        return df[columns].head(n_rows)
+    return df[columns]
 
 
 # 2. Статистический отчет
-def report_statistics(df: pd.DataFrame, numeric_cols: list[str], categorical_cols: list[str]) -> pd.DataFrame:
-    stats_numeric = df[numeric_cols].describe().T
-    freq_tables = {col: df[col].value_counts(normalize=False).to_frame('freq') for col in categorical_cols}
-    return stats_numeric, freq_tables
+def report_statistics(
+    df: pd.DataFrame,
+    numeric_cols: list[str],
+    categorical_cols: list[str]
+) -> tuple[pd.DataFrame, dict[str, pd.DataFrame]]:
+    """
+    Возвращает:
+     - stats_df: индекс = numeric_cols, колонки = ['count','mean','std','min','max']
+     - freq_dict: для каждого cat_col — DataFrame с индексом уровней
+       и колонками ['count','percent']
+    """
+    if not numeric_cols and not categorical_cols:
+        raise ValueError("Выберите хотя бы одну числовую или категориальную колонку")
+
+    # numeric statistics
+    stats_df = df[numeric_cols].agg(['count', 'mean', 'std', 'min', 'max']).T
+
+    # categorical frequencies
+    freq_dict: dict[str, pd.DataFrame] = {}
+    total = len(df)
+    for col in categorical_cols:
+        vc = df[col].value_counts(dropna=False)
+        freq_df = vc.rename_axis(col).rename('count').to_frame()
+        freq_df['percent'] = (freq_df['count'] / total) * 100
+        freq_dict[col] = freq_df
+
+    return stats_df, freq_dict
 
 
 # 3. Сводная таблица
@@ -54,8 +80,7 @@ def report_box(df: pd.DataFrame, numeric_col: str, category_col: str):
 # 7. Диаграмма рассеивания
 def report_scatter(df: pd.DataFrame, x: str, y: str, category_col: str):
     fig, ax = plt.subplots()
-    categories = df[category_col].unique()
-    for cat in categories:
+    for cat in df[category_col].unique():
         subset = df[df[category_col] == cat]
         ax.scatter(subset[x], subset[y], label=str(cat))
     ax.legend()
