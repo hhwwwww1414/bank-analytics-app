@@ -1,70 +1,56 @@
-"""
-data_management.py
-------------------
-CRUD-функции для справочников «Клиенты» и «Счета».
-
-Источник данных выбирается динамически через scripts.app_state.mode
-и переключается на лету без перезапуска GUI.
-"""
-
-from __future__ import annotations
-
-from pathlib import Path
 import pandas as pd
+import pytest
+from pathlib import Path
 
-from library.common_funcs import load_df, save_df, read_config
-import scripts.app_state as app_state          # ← импортируем модуль, не переменную!
+import scripts.data_management as dm
+from library.common_funcs import save_df
 
-CONFIG = read_config()
-DATA_DIR = Path(__file__).parent.parent / CONFIG["PATHS"]["data_dir"]
+@pytest.fixture
+def tmp_clients_file(tmp_path):
+    # создаём DataFrame и сохраняем его как clients.pkl
+    df = pd.DataFrame([
+        {'client_id': 1, 'first_name': 'Иван', 'age': 30},
+        {'client_id': 2, 'first_name': 'Ольга', 'age': 25},
+    ])
+    pkl = tmp_path / "clients.pkl"
+    save_df(df, pkl)
+    return df, pkl
 
+def test_load_clients(tmp_clients_file, monkeypatch):
+    df_orig, pkl = tmp_clients_file
+    # подменяем внутреннюю функцию _actual_file, чтобы она вернула наш pkl
+    monkeypatch.setattr(dm, "_actual_file", lambda base: pkl)
+    df_loaded = dm.load_clients()
+    pd.testing.assert_frame_equal(df_loaded, df_orig)
 
-def _primary_file(base: str) -> Path:
-    """clients_real.pkl / clients_synth.pkl в зависимости от текущего режима."""
-    suffix = "real" if app_state.mode is app_state.DataMode.REAL else "synth"
-    return DATA_DIR / f"{base}_{suffix}.pkl"
+@pytest.fixture
+def tmp_accounts_file(tmp_path):
+    df = pd.DataFrame([
+        {'account_id': 101, 'client_id': 1, 'balance': 1000.0},
+        {'account_id': 102, 'client_id': 2, 'balance': 2000.0},
+    ])
+    pkl = tmp_path / "accounts.pkl"
+    save_df(df, pkl)
+    return df, pkl
 
+def test_load_accounts(tmp_accounts_file, monkeypatch):
+    df_orig, pkl = tmp_accounts_file
+    monkeypatch.setattr(dm, "_actual_file", lambda base: pkl)
+    df_loaded = dm.load_accounts()
+    pd.testing.assert_frame_equal(df_loaded, df_orig)
 
-def _actual_file(base: str) -> Path:
-    """Если «нового» файла ещё нет, используем старое имя без суффикса."""
-    new_path = _primary_file(base)
-    old_path = DATA_DIR / f"{base}.pkl"
-    return new_path if new_path.exists() else old_path
+def test_add_and_delete_client():
+    df = pd.DataFrame([{'client_id': 1, 'first_name': 'A'}])
+    df2 = dm.add_client(df, {'client_id': 2, 'first_name': 'B'})
+    assert len(df2) == 2 and set(df2['client_id']) == {1, 2}
 
+    df3 = dm.delete_client(df2, client_id=1)
+    assert len(df3) == 1 and df3.iloc[0]['client_id'] == 2
 
-# -------------------------------------------------------------------------#
-#                       CRUD :  К Л И Е Н Т Ы                               #
-# -------------------------------------------------------------------------#
-def load_clients() -> pd.DataFrame:
-    return load_df(_actual_file("clients"))
+def test_add_and_delete_account():
+    df = pd.DataFrame([{'account_id': 1, 'client_id': 1}])
+    df2 = dm.add_account(df, {'account_id': 2, 'client_id': 1})
+    assert len(df2) == 2 and set(df2['account_id']) == {1, 2}
 
-
-def save_clients(df: pd.DataFrame) -> None:
-    save_df(df, _primary_file("clients"))
-
-
-def add_client(df: pd.DataFrame, client_row: dict) -> pd.DataFrame:
-    return pd.concat([df, pd.DataFrame([client_row])], ignore_index=True)
-
-
-def delete_client(df: pd.DataFrame, client_id: int) -> pd.DataFrame:
-    return df[df["client_id"] != client_id].reset_index(drop=True)
-
-
-# -------------------------------------------------------------------------#
-#                       CRUD :  С Ч Е Т А                                   #
-# -------------------------------------------------------------------------#
-def load_accounts() -> pd.DataFrame:
-    return load_df(_actual_file("accounts"))
-
-
-def save_accounts(df: pd.DataFrame) -> None:
-    save_df(df, _primary_file("accounts"))
-
-
-def add_account(df: pd.DataFrame, account_row: dict) -> pd.DataFrame:
-    return pd.concat([df, pd.DataFrame([account_row])], ignore_index=True)
-
-
-def delete_account(df: pd.DataFrame, account_id: int) -> pd.DataFrame:
-    return df[df["account_id"] != account_id].reset_index(drop=True)
+    df3 = dm.delete_account(df2, account_id=1)
+    assert len(df3) == 1 and df3.iloc[0]['account_id'] == 2
